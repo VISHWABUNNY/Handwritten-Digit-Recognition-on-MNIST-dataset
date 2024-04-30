@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Handwritten Digit Recognition</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            background-color: #f8f9fa;
+        }
+        .container {
+            text-align: center;
+            background-color: #fff;
+            border-radius: 10px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+            padding: 20px;
+        }
+        h1 {
+            margin-bottom: 20px;
+        }
+        #canvas {
+            border: 1px solid #000;
+            background-color: #fff;
+            cursor: crosshair;
+            margin-bottom: 20px;
+        }
+        #submit-btn, #clear-btn {
+            margin-top: 10px;
+            margin-right: 10px;
+            padding: 8px 20px;
+            font-size: 16px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: background-color 0.3s ease;
+        }
+        #submit-btn {
+            background-color: #007bff;
+            color: #fff;
+        }
+        #submit-btn:hover {
+            background-color: #0056b3;
+        }
+        #clear-btn {
+            background-color: #dc3545;
+            color: #fff;
+        }
+        #clear-btn:hover {
+            background-color: #c82333;
+        }
+        #predicted-digit {
+            font-size: 24px;
+            margin-top: 20px;
+        }
+        #predicted-digit span {
+            color: #007bff;
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Handwritten Digit Recognition</h1>
+        <canvas id="canvas" width="200" height="200"></canvas>
+        <button id="submit-btn">Predict</button>
+        <button id="clear-btn">Clear</button>
+        <div id="predicted-digit">Predicted digit: <span id="predicted-digit-value">-</span></div>
+    </div>
+
+    <script>
+        const canvas = document.getElementById('canvas');
+        const ctx = canvas.getContext('2d');
+        const predictedDigitElement = document.getElementById('predicted-digit-value');
+
+        let isDrawing = false;
+        let lastX = 0;
+        let lastY = 0;
+
+        canvas.addEventListener('mousedown', (e) => {
+            isDrawing = true;
+            [lastX, lastY] = [e.offsetX, e.offsetY];
+        });
+
+        canvas.addEventListener('mousemove', draw);
+        canvas.addEventListener('mouseup', () => isDrawing = false);
+        canvas.addEventListener('mouseout', () => isDrawing = false);
+
+        function draw(e) {
+            if (!isDrawing) return;
+            ctx.beginPath();
+            ctx.moveTo(lastX, lastY);
+            ctx.lineTo(e.offsetX, e.offsetY);
+            ctx.strokeStyle = '#000';
+            ctx.lineWidth = 5;
+            ctx.lineCap = 'round';
+            ctx.lineJoin = 'round';
+            ctx.stroke();
+            [lastX, lastY] = [e.offsetX, e.offsetY];
+        }
+
+        document.getElementById('submit-btn').addEventListener('click', () => {
+            const imageData = canvas.toDataURL();
+            predictDigit(imageData);
+        });
+
+        document.getElementById('clear-btn').addEventListener('click', () => {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            predictedDigitElement.innerText = '-';
+        });
+
+        function predictDigit(imageData) {
+            fetch('/predict', {
+                method: 'POST',
+                body: JSON.stringify({ image_data: imageData }),
+                headers: {
+                    'Content-Type': 'application/json'
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+                predictedDigitElement.innerText = data.predicted_digit;
+            })
+            .catch(error => {
+                console.error('Error:', error);
+            });
+        }
+    </script>
+    <!-- JavaScript import -->
+    <script src="script.js"></script>
+</body>
+</html>
